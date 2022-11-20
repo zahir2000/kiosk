@@ -15,12 +15,12 @@
 15    <uses-permission android:name="android.permission.INTERNET" />
 15-->F:\Downloads\OneDrive_2022-11-18\the project\kiosk-12-nov\android\app\src\main\AndroidManifest.xml:3:5-67
 15-->F:\Downloads\OneDrive_2022-11-18\the project\kiosk-12-nov\android\app\src\main\AndroidManifest.xml:3:22-64
-16    <uses-permission android:name="android.permission.CAMERA" />
-16-->[:camera_android] F:\Downloads\OneDrive_2022-11-18\the project\kiosk-12-nov\build\camera_android\intermediates\merged_manifest\debug\AndroidManifest.xml:9:5-65
-16-->[:camera_android] F:\Downloads\OneDrive_2022-11-18\the project\kiosk-12-nov\build\camera_android\intermediates\merged_manifest\debug\AndroidManifest.xml:9:22-62
-17    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-17-->[:camera_android] F:\Downloads\OneDrive_2022-11-18\the project\kiosk-12-nov\build\camera_android\intermediates\merged_manifest\debug\AndroidManifest.xml:10:5-71
-17-->[:camera_android] F:\Downloads\OneDrive_2022-11-18\the project\kiosk-12-nov\build\camera_android\intermediates\merged_manifest\debug\AndroidManifest.xml:10:22-68
+16    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+16-->[:tflite_flutter_helper] F:\Downloads\OneDrive_2022-11-18\the project\kiosk-12-nov\build\tflite_flutter_helper\intermediates\merged_manifest\debug\AndroidManifest.xml:9:5-71
+16-->[:tflite_flutter_helper] F:\Downloads\OneDrive_2022-11-18\the project\kiosk-12-nov\build\tflite_flutter_helper\intermediates\merged_manifest\debug\AndroidManifest.xml:9:22-68
+17    <uses-permission android:name="android.permission.CAMERA" />
+17-->[:camera_android] F:\Downloads\OneDrive_2022-11-18\the project\kiosk-12-nov\build\camera_android\intermediates\merged_manifest\debug\AndroidManifest.xml:9:5-65
+17-->[:camera_android] F:\Downloads\OneDrive_2022-11-18\the project\kiosk-12-nov\build\camera_android\intermediates\merged_manifest\debug\AndroidManifest.xml:9:22-62
 18
 19    <application
 20        android:name="android.app.Application"

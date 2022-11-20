@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,8 +11,10 @@ import 'package:kiosk/utils/index.dart';
 import 'package:kiosk/widgets/index.dart';
 import 'package:sizer/sizer.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:tflite/tflite.dart';
 import 'dart:developer';
+
+import 'package:kiosk/utils/tflite/classifier.dart';
+import 'package:kiosk/utils/tflite/isolate_utils.dart';
 
 class MainContainer extends StatefulWidget {
   final Widget child;
@@ -46,16 +50,42 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
   late Future<List<dynamic>?> recognitions;
   String _results = "";
 
+  /// Instance of [Classifier]
+  Classifier? classifier;
+
+  /// true when inference is ongoing
+  bool? predicting;
+
+  /// Instance of [IsolateUtils]
+  IsolateUtils? isolateUtils;
+
   @override
   void initState() {
     super.initState();
     log("Lifecycle: initState");
+    initStateAsync();
+    //initTensorFlow();
+  }
+
+  void initStateAsync() async {
+    WidgetsBinding.instance.addObserver(this);
+
+    // Spawn a new isolate
+    isolateUtils = IsolateUtils();
+    await isolateUtils!.start();
+
+    // Camera initialization
     getPermissionStatus();
-    initTensorFlow();
+
+    // Create an instance of classifier to load model and labels
+    classifier = Classifier();
+
+    // Initially predicting = false
+    predicting = false;
   }
 
   void onNewCameraSelected(CameraDescription cameraDescription) async {
-    log("onNewCameraSelected");
+    //log("onNewCameraSelected");
     final previousCameraController = _cameraController;
 
     final CameraController cameraController = CameraController(
@@ -83,24 +113,26 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
 
     if (!_isCameraInitialized) {
       try {
-        _initializeFutureController = cameraController.initialize().then((value){
-          cameraController.startImageStream((image){
-            //const oneSec = Duration(seconds: 10);
-            //Timer.periodic(oneSec, (Timer t){
-            _imageCount++;
+        _initializeFutureController = cameraController.initialize().then((_) async {
+          // Stream of image passed to [onLatestImageAvailable] callback
+          await cameraController.startImageStream(onLatestImageAvailable);
 
-            if (_imageCount % 80 == 0) {
-              _imageCount = 0;
-              runImageClassification(image);
-            }
-            //});
-          });
+          /// previewSize is size of each image frame captured by controller
+          ///
+          /// 352x288 on iOS, 240p (320x240) on Android with ResolutionPreset.low
+          //Size previewSize = cameraController.value.previewSize;
 
-          if (!mounted) {
-            return;
-          }
+          /// previewSize is size of raw input image to the model
+          //CameraViewSingleton.inputImageSize = previewSize;
 
-          setState(() {});
+          // the display width of image on screen is
+          // same as screenWidth while maintaining the aspectRatio
+          Size screenSize = MediaQuery.of(context).size;
+
+          //CameraViewSingleton.screenSize = screenSize;
+          //CameraViewSingleton.ratio = screenSize.width / previewSize.height;
+
+          print(_cameraController?.value.aspectRatio);
         });
         loading = false;
       } on CameraException catch (e) {
@@ -115,7 +147,7 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
     }
   }
 
-  Future<void> runImageClassification(CameraImage cameraImage) async {
+  /*Future<void> runImageClassification(CameraImage cameraImage) async {
     //to preprocess the image
 
     /*recognitions = Tflite.runModelOnFrame(
@@ -154,9 +186,9 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
     //setState(() {
       //updateResults();
     //});
-  }
+  } */
 
-  Future<void> initTensorFlow() async {
+  /*Future<void> initTensorFlow() async {
     String? res = await Tflite.loadModel(
         model: "assets/model.tflite",
         labels: "assets/labels.txt",
@@ -166,13 +198,70 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
     );
 
     log("TFLite Load Status: ${res!}");
+  } */
+
+  onLatestImageAvailable(CameraImage cameraImage) async {
+    if (classifier!.interpreter != null && classifier!.labels != null) {
+      // If previous inference has not completed then return
+      if (predicting!) {
+        return;
+      }
+
+      setState(() {
+        predicting = true;
+      });
+
+      var uiThreadTimeStart = DateTime.now().millisecondsSinceEpoch;
+
+      // Data to be passed to inference isolate
+      var isolateData = IsolateData(
+          cameraImage, classifier!.interpreter.address, classifier!.labels);
+
+      // We could have simply used the compute method as well however
+      // it would be as in-efficient as we need to continuously passing data
+      // to another isolate.
+
+      /// perform inference in separate isolate
+      Map<String, dynamic> inferenceResults = await inference(isolateData);
+
+      List resultsList = inferenceResults['recognitions'];
+      for (var result in resultsList) {
+        double score = double.parse(result.score.toString()) * 100;
+        _results = "${result.label}: ${(score.toStringAsFixed(2))}%";
+      }
+
+      var uiThreadInferenceElapsedTime =
+          DateTime.now().millisecondsSinceEpoch - uiThreadTimeStart;
+
+      // pass results to HomeView
+      //widget.resultsCallback(inferenceResults["recognitions"]);
+
+      // pass stats to HomeView
+      //widget.statsCallback((inferenceResults["stats"] as Stats)
+      //  ..totalElapsedTime = uiThreadInferenceElapsedTime);
+
+      // set predicting to false to allow new frames
+      if (mounted) {
+        setState(() {
+          predicting = false;
+        });
+      }
+    }
+  }
+
+  Future<Map<String, dynamic>> inference(IsolateData isolateData) async {
+    ReceivePort responsePort = ReceivePort();
+    isolateUtils!.sendPort
+        ?.send(isolateData..responsePort = responsePort.sendPort);
+    var results = await responsePort.first;
+    return results;
   }
 
   void updateResults() {
     recognitions.then((value){
       value?.forEach((element) {
         //print(element);
-        _results = element['label'] + ": " +(element['confidence']*100).toStringAsFixed(2) + "%";
+        //detectionResults = element['label'] + ": " +(element['confidence']*100).toStringAsFixed(2) + "%";
       });
     });
   }
@@ -205,33 +294,44 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    log("didChangeAppLifecycleState: $state");
-    final CameraController? cameraController = _cameraController;
-
-    // App state changed before we got the chance to initialize.
-    if (cameraController == null || !cameraController.value.isInitialized) {
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
       return;
     }
 
-    if (state == AppLifecycleState.inactive) {
-      cameraController.dispose();
-    } else if (state == AppLifecycleState.resumed) {
-      onNewCameraSelected(cameraController.description);
+    print("Lifecycle: $state");
+
+    switch (state) {
+      case AppLifecycleState.paused:
+        //if (_cameraController != null) {
+        //  _cameraController?.stopImageStream();
+        //}
+        break;
+      case AppLifecycleState.resumed:
+        _cameraController != null ? getPermissionStatus() : null;
+
+        if (!_cameraController!.value.isStreamingImages) {
+          await _cameraController?.startImageStream(onLatestImageAvailable);
+        }
+        break;
+      case AppLifecycleState.inactive:
+        _cameraController?.dispose();
+        break;
+      default:
     }
   }
 
   @override
   void dispose() {
-    super.dispose();
-    _cameraController?.dispose();
-    loading = true;
+    WidgetsBinding.instance.removeObserver(this);
     log("Lifecycle: dispose()");
+    _cameraController?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    log("Called main_container Widget build");
+    //log("Called main_container Widget build");
     final cartController = Get.find<Cart>();
     return Container(
       padding: EdgeInsets.fromLTRB(5.w, 0, 5, 0),
@@ -299,8 +399,8 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
                           ? FutureBuilder(
                               future: _initializeFutureController,
                               builder: (context, snapshot) {
-                                log("CameraController: isInitialized:"
-                                    "${_cameraController!.value.isInitialized}");
+                                //log("CameraController: isInitialized:"
+                                    //"${_cameraController!.value.isInitialized}");
                                 if (_cameraController!.value.isInitialized) {
                                   return Stack(fit: StackFit.expand, children: [
                                     CameraPreview(_cameraController!),
@@ -317,9 +417,11 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
                             ),
                     ),
                     SizedBox(width: 15.w,
-                      child:Text(_results,
-                        style: const TextStyle(color: Colors.white),
-                        textDirection: TextDirection.ltr),),
+                      child:const Text("")),
+                      /*child:Text(_results,
+                        style: const TextStyle(color: Colors.black),
+                        textDirection: TextDirection.ltr),), */
+
                   ],
                 ),
                 widget.child
@@ -391,7 +493,7 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
                       ],
                     ),
                   )
-                : const Text(""),
+                : Text(_results),
           ),
           Positioned(
             left: 0,

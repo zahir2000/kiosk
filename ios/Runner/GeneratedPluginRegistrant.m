@@ -36,10 +36,16 @@
 @import shared_preferences_ios;
 #endif
 
-#if __has_include(<tflite/TflitePlugin.h>)
-#import <tflite/TflitePlugin.h>
+#if __has_include(<tflite_flutter/TfliteFlutterPlugin.h>)
+#import <tflite_flutter/TfliteFlutterPlugin.h>
 #else
-@import tflite;
+@import tflite_flutter;
+#endif
+
+#if __has_include(<tflite_flutter_helper/TfliteFlutterHelperPlugin.h>)
+#import <tflite_flutter_helper/TfliteFlutterHelperPlugin.h>
+#else
+@import tflite_flutter_helper;
 #endif
 
 @implementation GeneratedPluginRegistrant
@@ -50,7 +56,8 @@
   [FLTPathProviderPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTPathProviderPlugin"]];
   [PermissionHandlerPlugin registerWithRegistrar:[registry registrarForPlugin:@"PermissionHandlerPlugin"]];
   [FLTSharedPreferencesPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTSharedPreferencesPlugin"]];
-  [TflitePlugin registerWithRegistrar:[registry registrarForPlugin:@"TflitePlugin"]];
+  [TfliteFlutterPlugin registerWithRegistrar:[registry registrarForPlugin:@"TfliteFlutterPlugin"]];
+  [TfliteFlutterHelperPlugin registerWithRegistrar:[registry registrarForPlugin:@"TfliteFlutterHelperPlugin"]];
 }
 
 @end
