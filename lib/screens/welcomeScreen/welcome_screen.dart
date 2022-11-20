@@ -7,6 +7,7 @@ import 'package:kiosk/screens/index.dart';
 import 'package:kiosk/widgets/index.dart';
 import 'package:sizer/sizer.dart';
 
+import '../../main.dart';
 import '../../ui/index.dart';
 import '../../utils/index.dart';
 
@@ -17,11 +18,14 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen> with WidgetsBindingObserver {
   final cartController = Get.find<Cart>();
+  Timer? timer;
+
   Future<void> getCartData() async {
     await cartController.getData();
   }
+
 
   @override
   void initState() {
@@ -29,7 +33,44 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     Timer(const Duration(seconds: 1), () {
       getCartData();
     });
+
+    timer = Timer.periodic(const Duration(seconds: 2), (Timer t) => _onPress());
+    print("welcome_screen initState");
   }
+
+  void _navigateToNextScreen(BuildContext context) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const EatTypeScreen()));
+  }
+
+  void _onPress() {
+    //print(ModalRoute.of(context)?.settings.name);
+    //Navigator.of(context).push(MaterialPageRoute(builder: (context) => const EatTypeScreen()));
+    //button.onPressed!();
+
+    // instead of popping the route, just take to previous screen using Navigator
+    // create a global variable in [main.dat] to check what page it is currently on.
+
+    if (inferenceResults != null && inferenceResults!.isNotEmpty) {
+      for (var result in inferenceResults!['recognitions']) {
+        if (result.score > 0.5 && result.label == "option1") {
+          timer?.cancel();
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const EatTypeScreen()));
+        }
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  ElevatedButton button = ElevatedButton(
+    child: Text("Button"),
+    onPressed: () => print('pressed'),
+  );
 
   @override
   Widget build(BuildContext context) {

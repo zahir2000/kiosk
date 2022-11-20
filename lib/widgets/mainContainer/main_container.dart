@@ -222,13 +222,20 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
       // to another isolate.
 
       /// perform inference in separate isolate
-      Map<String, dynamic> inferenceResults = await inference(isolateData);
+      inferenceResults = await inference(isolateData);
 
-      List resultsList = inferenceResults['recognitions'];
-      for (var result in resultsList) {
-        double score = double.parse(result.score.toString()) * 100;
-        _results = "${result.label}: ${(score.toStringAsFixed(2))}%";
+      List resultsList = inferenceResults!['recognitions'];
+
+      if (resultsList.isNotEmpty) {
+        for (var result in resultsList) {
+          double score = double.parse(result.score.toString()) * 100;
+          _results = "${result.label}: ${(score.toStringAsFixed(2))}%";
+        }
+      } else {
+        _results = "";
       }
+
+
 
       var uiThreadInferenceElapsedTime =
           DateTime.now().millisecondsSinceEpoch - uiThreadTimeStart;

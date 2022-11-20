@@ -22,6 +22,7 @@ void initializeCamera(int cameraIndex, CameraDescription description) {
 }*/
 
 List<CameraDescription> cameras = [];
+Map<String, dynamic>? inferenceResults;
 
 Future<void> main() async {
   Get.put(Cart());
