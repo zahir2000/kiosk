@@ -40,7 +40,7 @@ class MainContainer extends StatefulWidget {
 class _MainContainerState extends State<MainContainer> with WidgetsBindingObserver {
   CameraController? _cameraController;
   late Future<void> _initializeFutureController;
-  ResolutionPreset currentResolutionPreset = ResolutionPreset.high;
+  ResolutionPreset currentResolutionPreset = ResolutionPreset.low;
   int selectedCamera = 0;
   bool loading = true;
   bool _isCameraInitialized = false;
@@ -91,7 +91,7 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
     final CameraController cameraController = CameraController(
       cameraDescription,
       currentResolutionPreset,
-      imageFormatGroup: ImageFormatGroup.yuv420,
+      imageFormatGroup: ImageFormatGroup.bgra8888,
     );
 
     await previousCameraController?.dispose();
@@ -201,6 +201,8 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
   } */
 
   onLatestImageAvailable(CameraImage cameraImage) async {
+    log("${cameraImage.height} x ${cameraImage.width}");
+
     if (classifier!.interpreter != null && classifier!.labels != null) {
       // If previous inference has not completed then return
       if (predicting!) {
@@ -299,8 +301,10 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
       log("Number of Available Cameras: $_noOfCameras");
       if (_noOfCameras == 1) {
         onNewCameraSelected(cameras[0]);
+        cameraType = 0;
       } else if (_noOfCameras > 1) {
         onNewCameraSelected(cameras[1]);
+        cameraType = 1;
       } else {
         log('Camera not found.');
       }

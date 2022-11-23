@@ -23,6 +23,7 @@ void initializeCamera(int cameraIndex, CameraDescription description) {
 
 List<CameraDescription> cameras = [];
 Map<String, dynamic>? inferenceResults;
+int? cameraType;
 
 const int START_DETECTION_DELAY = 2;
 const int DETECTION_CHECK_TIMER = 3;

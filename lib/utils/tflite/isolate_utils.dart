@@ -2,6 +2,7 @@ import 'dart:isolate';
 import 'package:camera/camera.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as imageLib;
+import '../../main.dart';
 import 'classifier.dart';
 import 'dart:io';
 
@@ -38,10 +39,12 @@ class IsolateUtils {
             labels: isolateData.labels);
         imageLib.Image? image =
         ImageUtils.convertCameraImage(isolateData.cameraImage);
-        if (Platform.isAndroid) {
+        if (Platform.isAndroid && cameraType == 0) {
           image = imageLib.copyRotate(image!, 90);
+        } else {
+          image = imageLib.copyRotate(image!, 270);
         }
-        Map<String, dynamic>? results = classifier.predict(image!);
+        Map<String, dynamic>? results = classifier.predict(image);
         isolateData.responsePort?.send(results);
       }
     }
