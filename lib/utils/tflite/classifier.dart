@@ -18,8 +18,8 @@ class Classifier {
   /// Labels file loaded as list
   late List<String> _labels;
 
-  static const String MODEL_FILE_NAME = "model.tflite";
-  static const String LABEL_FILE_NAME = "labels.txt";
+  static const String MODEL_FILE_NAME = "tflite/model.tflite";
+  static const String LABEL_FILE_NAME = "tflite/labels.txt";
 
   /// Input size of image (height = width = 300)
   static int INPUT_SIZE = 300;
