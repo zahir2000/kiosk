@@ -229,13 +229,11 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
       if (resultsList.isNotEmpty) {
         for (var result in resultsList) {
           double score = double.parse(result.score.toString()) * 100;
-          _results = "${result.label}: ${(score.toStringAsFixed(2))}%";
+          _results = "${getLabelFromResult(result.label)}: ${(score.toStringAsFixed(2))}%";
         }
       } else {
         _results = "";
       }
-
-
 
       var uiThreadInferenceElapsedTime =
           DateTime.now().millisecondsSinceEpoch - uiThreadTimeStart;
@@ -253,6 +251,19 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
           predicting = false;
         });
       }
+    }
+  }
+
+  getLabelFromResult(String label) {
+    switch (label) {
+      case "option1": return "Option1";
+      case "option2": return "Option2";
+      case "option3": return "Option3";
+      case "option4": return "Option4";
+      case "back": return "Back";
+      case "punch": return "Fist";
+      case "thumb": return "Thumbs Up";
+      case "ok": return "Ok Sign";
     }
   }
 
