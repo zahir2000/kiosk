@@ -8,3 +8,4 @@ const okHandPic = "assets/images/ok-hand.png";
 const recPic = "assets/images/rec.png";
 const cartPic = "assets/images/cart.png";
 const okCartHandPic = "assets/images/ok-cart-hand.png";
+const fistPic = "assets/images/fist.png";

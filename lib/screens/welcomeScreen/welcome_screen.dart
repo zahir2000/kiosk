@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:kiosk/controllers/cart.dart';
 import 'package:kiosk/screens/index.dart';
 import 'package:kiosk/widgets/index.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../main.dart';
@@ -21,6 +22,7 @@ class WelcomeScreen extends StatefulWidget {
 class _WelcomeScreenState extends State<WelcomeScreen> with WidgetsBindingObserver {
   final cartController = Get.find<Cart>();
   Timer? timer;
+  late AlertDialog alert;
 
   Future<void> getCartData() async {
     await cartController.getData();
@@ -34,15 +36,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> with WidgetsBindingObserv
       getCartData();
     });
 
-    timer = Timer.periodic(const Duration(seconds: 2), (Timer t) => _onPress());
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setInt("dialog_open", 0);
+      prefs.setString("current_screen", "welcome_screen");
+    });
+
+    timer = Timer.periodic(const Duration(seconds: 3), (Timer t) => _onGestureDetected());
     print("welcome_screen initState");
   }
 
-  void _navigateToNextScreen(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const EatTypeScreen()));
-  }
-
-  void _onPress() {
+  Future<void>? _onGestureDetected() {
     //print(ModalRoute.of(context)?.settings.name);
     //Navigator.of(context).push(MaterialPageRoute(builder: (context) => const EatTypeScreen()));
     //button.onPressed!();
@@ -52,13 +55,83 @@ class _WelcomeScreenState extends State<WelcomeScreen> with WidgetsBindingObserv
 
     if (inferenceResults != null && inferenceResults!.isNotEmpty) {
       for (var result in inferenceResults!['recognitions']) {
-        if (result.score > 0.5 && result.label == "option1") {
-          timer?.cancel();
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const EatTypeScreen()));
+        if (result.score > 0.5) {
+          SharedPreferences.getInstance().then((prefs) {
+            final int dialogOpen = prefs.getInt('dialog_open') ?? 0;
+            if (dialogOpen == 0 && result.label == "option1") {//show dialog for one time only
+              prefs.setInt("dialog_open", 1);
+              showAlertDialog(context);
+            }
+
+            if (dialogOpen == 1 && result.label == "back") {
+              SharedPreferences.getInstance().then((prefs) {
+                Navigator.pop(context, false);
+                prefs.setInt("dialog_open", 0);
+              });
+            } else if (dialogOpen == 1 && result.label == "thumb") {
+              SharedPreferences.getInstance().then((prefs) {
+                Navigator.pop(context, false);
+                prefs.setInt("dialog_open", 0);
+                timer?.cancel();
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const EatTypeScreen()));
+              });
+            }
+          });
+
+          //timer?.cancel();
+          //Navigator.push(context,
+          //    MaterialPageRoute(builder: (_) => const EatTypeScreen()));
+
         }
       }
     }
+    return null;
+  }
+
+  showAlertDialog(BuildContext context) {
+    // set up the buttons
+    Widget cancelButton = ElevatedButton(
+      child: SizedBox(
+          height: 8.h,
+          width: 8.w,
+          child: Image.asset(fiveHandPic)),
+      onPressed:  () {
+        SharedPreferences.getInstance().then((prefs) {
+          Navigator.pop(context, false);
+          prefs.setInt("dialog_open", 0);
+        });
+      },
+    );
+    Widget continueButton = ElevatedButton(
+      child: SizedBox(
+        height: 8.h,
+        width: 8.w,
+        child: Image.asset(okCartHandPic)),
+      onPressed:  () {
+        SharedPreferences.getInstance().then((prefs) {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const EatTypeScreen()));
+        });
+      },
+    );
+    // set up the AlertDialog
+    alert = AlertDialog(
+      title: Text("Start Order"),
+      content: Text("Would you like to continue to start order?"),
+      actions: [
+        cancelButton,
+        continueButton,
+      ],
+    );
+    // show the dialog
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
   }
 
   @override

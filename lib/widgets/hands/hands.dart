@@ -38,3 +38,8 @@ Widget okCartHandWidget({double height = 8, double width = 8}) => SizedBox(
       width: width.w,
       child: Image.asset(okCartHandPic),
     );
+Widget fistHandWidget({double height = 8, double width = 8}) => SizedBox(
+  height: height.h,
+  width: width.w,
+  child: Image.asset(fistPic),
+);

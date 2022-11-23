@@ -22,7 +22,9 @@ Widget myRow(
                       ? fourHandWidget()
                       : handName == "five"
                           ? fiveHandWidget()
-                          : const Text(""),
+                          : handName == "fist"
+                            ? fistHandWidget()
+                              : const Text(""),
       kHorizontalNormalSpace(),
       GestureDetector(
         onTap: onTap,

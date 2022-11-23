@@ -353,6 +353,7 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                Text(_results),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,7 +411,7 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
                                     //"${_cameraController!.value.isInitialized}");
                                 if (_cameraController!.value.isInitialized) {
                                   return Stack(fit: StackFit.expand, children: [
-                                    CameraPreview(_cameraController!),
+                                      CameraPreview(_cameraController!)
                                   ]);
                                 } else {
                                   // Otherwise, display a loading indicator.
@@ -424,17 +425,28 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
                             ),
                     ),
                     SizedBox(width: 15.w,
-                      child:const Text("")),
+                      child:const Text(""))
                       /*child:Text(_results,
                         style: const TextStyle(color: Colors.black),
                         textDirection: TextDirection.ltr),), */
 
                   ],
                 ),
-                widget.child
+                //Text(_results),
+                widget.child,
               ],
             ),
           ),
+          /*FractionallySizedBox(
+            widthFactor: 1,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(""),
+              ],
+            ),
+          ),*/
           Positioned(
               left: 0,
               top: 0,
@@ -500,7 +512,7 @@ class _MainContainerState extends State<MainContainer> with WidgetsBindingObserv
                       ],
                     ),
                   )
-                : Text(_results),
+                : const Text(""), //_results
           ),
           Positioned(
             left: 0,
